@@ -1,3 +1,5 @@
+/* eslint-disable no-empty */
+/* eslint-disable @typescript-eslint/no-var-requires */
 let buildOptions;
 
 jest.mock('@nrwl/devkit');
@@ -10,7 +12,11 @@ let { fork } = require('child_process');
 jest.mock('tree-kill');
 let treeKill = require('tree-kill');
 
-import { executor, InspectType, ElectronExecuteBuilderOptions } from './executor';
+import {
+  executor,
+  InspectType,
+  ElectronExecuteBuilderOptions,
+} from './executor';
 
 describe('ElectronExecuteBuilder', () => {
   let options: ElectronExecuteBuilderOptions;
@@ -47,6 +53,7 @@ describe('ElectronExecuteBuilder', () => {
       cwd: '/root',
       workspace: {
         version: 2,
+        npmScope: null,
         projects: {
           'electron-app': {
             root: '/root/electron-app',
@@ -93,9 +100,7 @@ describe('ElectronExecuteBuilder', () => {
       context
     );
     expect(fork).toHaveBeenCalledWith('outfile.js', [], {
-      execArgv: [
-        '--inspect=9229',
-      ],
+      execArgv: ['--inspect=9229'],
     });
     expect(treeKill).toHaveBeenCalledTimes(0);
     expect(fork).toHaveBeenCalledTimes(1);
@@ -113,9 +118,7 @@ describe('ElectronExecuteBuilder', () => {
         )) {
         }
         expect(fork).toHaveBeenCalledWith('outfile.js', [], {
-          execArgv: [
-            '--inspect=9229',
-          ],
+          execArgv: ['--inspect=9229'],
         });
       });
     });
@@ -131,9 +134,7 @@ describe('ElectronExecuteBuilder', () => {
         )) {
         }
         expect(fork).toHaveBeenCalledWith('outfile.js', [], {
-          execArgv: [
-            '--inspect-brk=9229',
-          ],
+          execArgv: ['--inspect-brk=9229'],
         });
       });
     });
@@ -151,9 +152,7 @@ describe('ElectronExecuteBuilder', () => {
         )) {
         }
         expect(fork).toHaveBeenCalledWith('outfile.js', [], {
-          execArgv: [
-            '--inspect=1234',
-          ],
+          execArgv: ['--inspect=1234'],
         });
       });
     });

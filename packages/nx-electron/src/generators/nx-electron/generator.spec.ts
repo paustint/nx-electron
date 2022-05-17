@@ -39,11 +39,12 @@ describe('app', () => {
         frontendProject: 'electron-web',
         addProxy: false,
         proxyPort: 3000,
+        skipProxy: false,
         skipFormat: false,
         skipPackageJson: false,
         linter: Linter.None,
         standaloneConfig: false,
-        unitTestRunner: 'none'
+        unitTestRunner: 'none',
       });
       const workspaceJson = readJson(tree, '/workspace.json');
       const nxJson = readJson<NxJsonConfiguration>(tree, 'nx.json');
@@ -67,7 +68,8 @@ describe('app', () => {
                 inspect: false,
                 fileReplacements: [
                   {
-                    replace: 'apps/electron-app/src/environments/environment.ts',
+                    replace:
+                      'apps/electron-app/src/environments/environment.ts',
                     with: 'apps/electron-app/src/environments/environment.prod.ts',
                   },
                 ],
@@ -99,6 +101,7 @@ describe('app', () => {
         frontendProject: 'electron-web',
         addProxy: false,
         proxyPort: 3000,
+        skipProxy: false,
         skipFormat: false,
         skipPackageJson: false,
         linter: Linter.None,
@@ -120,6 +123,7 @@ describe('app', () => {
         frontendProject: 'electron-web',
         addProxy: false,
         proxyPort: 3000,
+        skipProxy: false,
         skipFormat: false,
         skipPackageJson: false,
         linter: Linter.None,
@@ -196,6 +200,7 @@ describe('app', () => {
         frontendProject: 'electron-web',
         addProxy: false,
         proxyPort: 3000,
+        skipProxy: false,
         skipFormat: false,
         skipPackageJson: false,
         linter: Linter.None,
@@ -230,6 +235,7 @@ describe('app', () => {
         frontendProject: 'electron-web',
         addProxy: false,
         proxyPort: 3000,
+        skipProxy: false,
         skipFormat: false,
         skipPackageJson: false,
         linter: Linter.None,
@@ -257,6 +263,7 @@ describe('app', () => {
         frontendProject: 'electron-web',
         addProxy: false,
         proxyPort: 3000,
+        skipProxy: false,
         skipFormat: false,
         skipPackageJson: false,
         linter: Linter.None,
@@ -306,6 +313,7 @@ describe('app', () => {
         frontendProject: 'electron-web',
         addProxy: false,
         proxyPort: 3000,
+        skipProxy: false,
         skipFormat: false,
         skipPackageJson: false,
         linter: Linter.None,
@@ -347,6 +355,7 @@ describe('app', () => {
         frontendProject: 'electron-web',
         addProxy: false,
         proxyPort: 3000,
+        skipProxy: false,
         skipFormat: false,
         skipPackageJson: false,
         linter: Linter.None,
@@ -370,6 +379,7 @@ describe('app', () => {
         frontendProject: 'electron-web',
         addProxy: false,
         proxyPort: 3000,
+        skipProxy: false,
         skipFormat: false,
         skipPackageJson: false,
         linter: Linter.None,
@@ -382,6 +392,7 @@ describe('app', () => {
         frontendProject: 'electron-web',
         addProxy: false,
         proxyPort: 3000,
+        skipProxy: false,
         skipFormat: false,
         skipPackageJson: false,
         linter: Linter.None,
@@ -392,8 +403,8 @@ describe('app', () => {
       expect(tree.exists('apps/electron-web/proxy.conf.json')).toBeTruthy();
 
       expect(readJson(tree, 'apps/electron-web/proxy.conf.json')).toEqual({
-        '/api': { target: 'http://localhost:3333', secure: false },
-        '/billing-api': { target: 'http://localhost:3333', secure: false },
+        '/api': { target: 'http://localhost:3000', secure: false },
+        '/billing-api': { target: 'http://localhost:3000', secure: false },
       });
     });
 
@@ -405,6 +416,7 @@ describe('app', () => {
         frontendProject: 'electronWeb',
         addProxy: false,
         proxyPort: 3000,
+        skipProxy: false,
         skipFormat: false,
         skipPackageJson: false,
         linter: Linter.None,
@@ -421,30 +433,31 @@ describe('app', () => {
     });
   });
 
-    it('should update workspace.json', async () => {
-      await applicationGenerator(tree, {
-        name: 'electron-app',
-        frontendProject: 'electron-web',
-        addProxy: false,
-        proxyPort: 3000,
-        skipFormat: false,
-        skipPackageJson: false,
-        linter: Linter.None,
-        standaloneConfig: false,
-        unitTestRunner: 'none',
-      } as Schema);
-      const workspaceJson = readJson(tree, '/workspace.json');
-      const project = workspaceJson.projects['electron-app'];
-      const buildTarget = project.architect.build;
+  it('should update workspace.json', async () => {
+    await applicationGenerator(tree, {
+      name: 'electron-app',
+      frontendProject: 'electron-web',
+      addProxy: false,
+      proxyPort: 3000,
+      skipProxy: false,
+      skipFormat: false,
+      skipPackageJson: false,
+      linter: Linter.None,
+      standaloneConfig: false,
+      unitTestRunner: 'none',
+    } as Schema);
+    const workspaceJson = readJson(tree, '/workspace.json');
+    const project = workspaceJson.projects['electron-app'];
+    const buildTarget = project.architect.build;
 
-      expect(buildTarget.options.main).toEqual('apps/electron-app/src/main.js');
-      expect(buildTarget.configurations.production.fileReplacements).toEqual([
-        {
-          replace: 'apps/electron-app/src/environments/environment.js',
-          with: 'apps/electron-app/src/environments/environment.prod.js',
-        },
-      ]);
-    });
+    expect(buildTarget.options.main).toEqual('apps/electron-app/src/main.js');
+    expect(buildTarget.configurations.production.fileReplacements).toEqual([
+      {
+        replace: 'apps/electron-app/src/environments/environment.js',
+        with: 'apps/electron-app/src/environments/environment.prod.js',
+      },
+    ]);
+  });
 
   describe('--skipFormat', () => {
     it('should format files by default', async () => {
@@ -455,6 +468,7 @@ describe('app', () => {
         frontendProject: 'electron-web',
         addProxy: false,
         proxyPort: 3000,
+        skipProxy: false,
         skipFormat: false,
         skipPackageJson: false,
         linter: Linter.None,
@@ -473,6 +487,7 @@ describe('app', () => {
         frontendProject: 'electron-web',
         addProxy: false,
         proxyPort: 3000,
+        skipProxy: false,
         skipFormat: false,
         skipPackageJson: false,
         linter: Linter.None,

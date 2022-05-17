@@ -5,7 +5,6 @@ import { executor, PackageElectronBuilderOptions } from './executor';
 
 jest.mock('@nrwl/workspace/src/core/project-graph');
 import * as projectGraph from '@nrwl/workspace/src/core/project-graph';
-import { ProjectGraph, ProjectType } from '@nrwl/workspace/src/core/project-graph';
 
 jest.mock('glob');
 import * as glob from 'glob';
@@ -23,7 +22,6 @@ describe('MakeElectronBuilder', () => {
   let options: PackageElectronBuilderOptions;
 
   beforeEach(async () => {
-
     options = {
       root: '.',
       platform: 'windows',

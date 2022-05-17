@@ -1,6 +1,5 @@
-import { ExecutorContext } from '@nrwl/devkit';
+import { ExecutorContext, ProjectGraph } from '@nrwl/devkit';
 import * as projectGraph from '@nrwl/workspace/src/core/project-graph';
-import type { ProjectGraph } from '@nrwl/workspace/src/core/project-graph';
 import { of } from 'rxjs';
 import executor, { BuildElectronBuilderOptions } from './executor';
 
@@ -28,6 +27,7 @@ describe('ElectronBuildBuilder', () => {
       targetName: 'build',
       workspace: {
         version: 2,
+        npmScope: null,
         projects: {
           'my-app': <any>{
             root: 'apps/electron-app',
