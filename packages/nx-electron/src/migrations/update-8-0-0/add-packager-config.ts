@@ -14,7 +14,7 @@ function addConfigurations(): Rule {
           ([targetName, targetConfig]) => {
             if (targetConfig.builder === 'nx-electron:build') {
               const project = workspaceJson.projects[projectName];
-              let frontendProject = "{replace with frontend-app-name}";
+              const frontendProject = "{replace with frontend-app-name}";
 
               project.architect['make'] = {
                 "builder": "nx-electron:make",
@@ -35,8 +35,8 @@ function addConfigurations(): Rule {
 }
 
 function addConfigurationFile(): Rule {
-  let rules: Rule = updateWorkspaceInTree((workspaceJson, context, host) => {
-    let workspaceRules: Rule[] = [];
+  const rules: Rule = updateWorkspaceInTree((workspaceJson) => {
+    const workspaceRules: Rule[] = [];
 
     Object.entries<any>(workspaceJson.projects).forEach(
       ([projectName, project]) => {
@@ -57,7 +57,7 @@ function addConfigurationFile(): Rule {
     return workspaceRules;
   });
 
-  return chain([rules]); 
+  return chain([rules]);
 }
 
 function writeConfigurationFile(projectSourceRoot: string): Rule {

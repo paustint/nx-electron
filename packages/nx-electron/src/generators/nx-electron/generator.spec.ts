@@ -450,7 +450,7 @@ describe('app', () => {
     it('should format files by default', async () => {
       jest.spyOn(devkit, 'formatFiles');
 
-      await applicationGenerator(tree, {        
+      await applicationGenerator(tree, {
         name: 'electron-app',
         frontendProject: 'electron-web',
         addProxy: false,
@@ -459,7 +459,7 @@ describe('app', () => {
         skipPackageJson: false,
         linter: Linter.None,
         standaloneConfig: false,
-        unitTestRunner: 'none', 
+        unitTestRunner: 'none',
       });
 
       expect(devkit.formatFiles).toHaveBeenCalled();
@@ -468,7 +468,7 @@ describe('app', () => {
     it('should not format files when --skipFormat=true', async () => {
       jest.spyOn(devkit, 'formatFiles');
 
-      await applicationGenerator(tree, { 
+      await applicationGenerator(tree, {
         name: 'electron-app',
         frontendProject: 'electron-web',
         addProxy: false,

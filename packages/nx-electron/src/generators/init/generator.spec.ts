@@ -28,10 +28,10 @@ describe('init', () => {
     await initGenerator(tree, { skipFormat: false });
 
     const packageJson = readJson(tree, 'package.json');
-    expect(packageJson.dependencies['@nrwl/node']).toBeUndefined();
+    expect(packageJson.dependencies['@nrwl/node']).toBeDefined();
     expect(packageJson.dependencies['tslib']).toBeDefined();
     expect(packageJson.dependencies[existing]).toBeDefined();
-    expect(packageJson.devDependencies['@nrwl/node']).toBeDefined();
+    expect(packageJson.devDependencies['@nrwl/node']).toBeUndefined();
     expect(packageJson.devDependencies[existing]).toBeDefined();
   });
 
@@ -44,7 +44,7 @@ describe('init', () => {
   // });
 
   it('should not add jest config if unitTestRunner is none', async () => {
-    await initGenerator(tree, { skipFormat: false });
+    await initGenerator(tree, { skipFormat: false, unitTestRunner: 'none' });
     expect(tree.exists('jest.config.js')).toEqual(false);
   });
 });

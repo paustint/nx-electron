@@ -2,9 +2,10 @@ import { Linter } from '@nrwl/linter';
 
 export interface Schema {
   name: string;
-  frontendProject: string;
+  frontendProject: string | string[];
   addProxy: boolean;
   proxyPort: number;
+  skipProxy: boolean;
   skipFormat: boolean;
   skipPackageJson: boolean;
   directory?: string;

@@ -25,6 +25,7 @@ import { runTasksInSerial } from '@nrwl/workspace/src/utilities/run-tasks-in-ser
 
 import { Schema } from './schema';
 import { generator as initGenerator } from '../init/generator';
+import { getFrontendProjectsAsArray } from '../../utils/config';
 
 export interface NormalizedSchema extends Schema {
   appProjectRoot: string;
@@ -127,10 +128,11 @@ function addProject(tree: Tree, options: NormalizedSchema) {
 }
 
 function updateConstantsFile(tree: Tree, options: NormalizedSchema) {
+  const frontendProject = Array.isArray(options.frontendProject) ? options.frontendProject[0] : options.frontendProject;
   tree.write(
     join(options.appProjectRoot, 'src/app/constants.ts'),
     stripIndents`export const rendererAppPort = 4200;
-    export const rendererAppName = '${options.frontendProject || options.name.split('-')[0] + '-web'}';
+    export const rendererAppName = '${frontendProject || options.name.split('-')[0] + '-web'}';
     export const electronAppName = '${options.name}';
     export const updateServerUrl = 'https://deployment-server-url.com';         // TODO: insert your update server url here
     `
@@ -147,45 +149,47 @@ function addAppFiles(tree: Tree, options: NormalizedSchema) {
 }
 
 function addProxy(tree: Tree, options: NormalizedSchema) {
-  const projectConfig = readProjectConfiguration(tree, options.frontendProject);
-  if (projectConfig.targets && projectConfig.targets.serve) {
-    const pathToProxyFile = `${projectConfig.root}/proxy.conf.json`;
-    projectConfig.targets.serve.options = {
-      ...projectConfig.targets.serve.options,
-      proxyConfig: pathToProxyFile,
-    };
-
-    if (!tree.exists(pathToProxyFile)) {
-      tree.write(
-        pathToProxyFile,
-        JSON.stringify(
-          {
-            '/api': {
-              target: `http://localhost:${options.proxyPort || 3000}`,
-              secure: false,
-            },
-          },
-          null,
-          2
-        )
-      );
-    } else {
-      //add new entry to existing config
-      const proxyFileContent = tree.read(pathToProxyFile).toString();
-
-      const proxyModified = {
-        ...JSON.parse(proxyFileContent),
-        [`/${options.name}-api`]: {
-          target: `http://localhost:${options.proxyPort || 3000}`,
-          secure: false,
-        },
+  getFrontendProjectsAsArray(options.frontendProject).forEach(frontendProject => {
+    const projectConfig = readProjectConfiguration(tree, frontendProject);
+    if (projectConfig.targets && projectConfig.targets.serve) {
+      const pathToProxyFile = `${projectConfig.root}/proxy.conf.json`;
+      projectConfig.targets.serve.options = {
+        ...projectConfig.targets.serve.options,
+        proxyConfig: pathToProxyFile,
       };
 
-      tree.write(pathToProxyFile, JSON.stringify(proxyModified, null, 2));
-    }
+      if (!tree.exists(pathToProxyFile)) {
+        tree.write(
+          pathToProxyFile,
+          JSON.stringify(
+            {
+              '/api': {
+                target: `http://localhost:${options.proxyPort || 3000}`,
+                secure: false,
+              },
+            },
+            null,
+            2
+          )
+        );
+      } else {
+        //add new entry to existing config
+        const proxyFileContent = tree.read(pathToProxyFile).toString();
 
-    updateProjectConfiguration(tree, options.frontendProject, projectConfig);
-  }
+        const proxyModified = {
+          ...JSON.parse(proxyFileContent),
+          [`/${options.name}-api`]: {
+            target: `http://localhost:${options.proxyPort || 3000}`,
+            secure: false,
+          },
+        };
+
+        tree.write(pathToProxyFile, JSON.stringify(proxyModified, null, 2));
+      }
+
+      updateProjectConfiguration(tree, frontendProject, projectConfig);
+    }
+  })
 }
 
 export async function addLintingToApplication(
@@ -243,7 +247,7 @@ export async function generator(tree: Tree, schema: Schema) {
     tasks.push(jestTask);
   }
 
-  if (options.frontendProject) {
+  if (options.frontendProject && !options.skipProxy) {
     addProxy(tree, options);
   }
 
@@ -269,12 +273,17 @@ function normalizeOptions(host: Tree, options: Schema): NormalizedSchema {
     ? options.tags.split(',').map((s) => s.trim())
     : [];
 
+  let frontendProject: string | string[];
+  if(options.frontendProject) {
+    frontendProject = Array.isArray(options.frontendProject)
+      ? options.frontendProject.map(frontendProject => names(frontendProject).fileName)
+      : names(options.frontendProject).fileName
+  }
+
   return {
     ...options,
     name: names(appProjectName).fileName,
-    frontendProject: options.frontendProject
-      ? names(options.frontendProject).fileName
-      : undefined,
+    frontendProject,
     appProjectRoot,
     parsedTags,
     linter: options.linter ?? Linter.EsLint,
