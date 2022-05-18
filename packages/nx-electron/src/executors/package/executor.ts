@@ -1,28 +1,25 @@
 import { ExecutorContext, logger, stripIndents } from '@nrwl/devkit';
-
 import { build, Configuration, PublishOptions, Platform, Arch, createTargets, FileSet, CliOptions } from 'electron-builder';
 import { writeFile, statSync, readFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { promisify } from 'util';
-
 import { getSourceRoot } from '../../utils/workspace';
 import { normalizePackagingOptions } from '../../utils/normalize';
-
-import { Observable, from, of } from 'rxjs';
-import { map, tap, concatMap, catchError } from 'rxjs/operators';
 import { platform } from 'os';
-
 import stripJsonComments from 'strip-json-comments';
+import { getFrontendProjectsAsArray } from '../../utils/config';
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   require('dotenv').config();
+// eslint-disable-next-line no-empty
 } catch (e) {}
 
 const writeFileAsync = (path: string, data: string) => promisify(writeFile)(path, data, { encoding: 'utf8' });
 
 export interface PackageElectronBuilderOptions extends Configuration {
   name: string;
-  frontendProject: string;
+  frontendProject: string | string[];
   platform: string | string[];
   arch: string;
   root: string;
@@ -39,21 +36,21 @@ export interface PackageElectronBuilderOutput {
   outputPath: string | string[];
 }
 
-export async function executor(rawOptions: PackageElectronBuilderOptions, context: ExecutorContext): Promise<{ success: boolean; }> { 
+export async function executor(rawOptions: PackageElectronBuilderOptions, context: ExecutorContext): Promise<{ success: boolean; }> {
   logger.warn(stripIndents`
   *********************************************************
   DO NOT FORGET TO REBUILD YOUR FRONTEND & BACKEND PROJECTS
   FOR PRODUCTION BEFORE PACKAGING / MAKING YOUR ARTIFACT!
   *********************************************************`);
-  let success: boolean = false;
+  let success = false;
 
   try {
-    const { sourceRoot, projectRoot } = getSourceRoot(context);
-  
+    const { sourceRoot } = getSourceRoot(context);
+
     let options = normalizePackagingOptions(rawOptions, context.root, sourceRoot);
     options = mergePresetOptions(options);
     options = addMissingDefaultOptions(options);
-  
+
     const platforms: Platform[] = _createPlatforms(options.platform);
     const targets: Map<Platform, Map<Arch, string[]>> = _createTargets(platforms, null, options.arch);
     const baseConfig: Configuration = _createBaseConfig(options, context);
@@ -67,7 +64,7 @@ export async function executor(rawOptions: PackageElectronBuilderOptions, contex
   } catch (error) {
     logger.error(error);
   }
-  
+
   return { success };
 }
 
@@ -79,7 +76,7 @@ function _createPlatforms(rawPlatforms: string | string[]): Platform[] {
   const platforms: Platform[] = [];
 
   if (!rawPlatforms) {
-    const platformMap: Map<string, string> = new Map([['win32', 'windows'], ['darwin', 'mac'], ['linux', 'linux']]); 
+    const platformMap: Map<string, string> = new Map([['win32', 'windows'], ['darwin', 'mac'], ['linux', 'linux']]);
 
     rawPlatforms = platformMap.get(platform());
   }
@@ -112,8 +109,9 @@ function _createTargets(platforms: Platform[], type: string, arch: string): Map<
 function _createBaseConfig(options: PackageElectronBuilderOptions, context: ExecutorContext): Configuration {
   const files: Array<FileSet | string> = options.files ?
    (Array.isArray(options.files) ? options.files : [options.files] ): Array<FileSet | string>()
-  const outputPath = options.prepackageOnly ? 
+  const outputPath = options.prepackageOnly ?
     options.outputPath.replace('executables', 'packages') : options.outputPath;
+  const frontendProjects = getFrontendProjectsAsArray(options.frontendProject);
 
   return {
     directories: {
@@ -121,11 +119,11 @@ function _createBaseConfig(options: PackageElectronBuilderOptions, context: Exec
       output: join(context.root, outputPath)
     },
     files: files.concat([
-      {
-          from: resolve(options.sourcePath, options.frontendProject),
-          to: options.frontendProject,
-          filter: ['**/!(*.+(js|css).map)', 'assets']
-      },
+      ...frontendProjects.map(frontendProject => ({
+        from: resolve(options.sourcePath, frontendProject),
+        to: frontendProject,
+        filter: ['**/!(*.+(js|css).map)', 'assets']
+      })),
       {
           from: resolve(options.sourcePath, options.name),
           to: options.name,
@@ -135,7 +133,7 @@ function _createBaseConfig(options: PackageElectronBuilderOptions, context: Exec
           from: resolve(options.sourcePath, options.name),
           to: '',
           filter: ['index.js', 'package.json']
-      },      
+      },
       './package.json',
       '!(**/*.+(js|css).map)',
     ])
@@ -144,7 +142,7 @@ function _createBaseConfig(options: PackageElectronBuilderOptions, context: Exec
 
 function _createConfigFromOptions(options: PackageElectronBuilderOptions, baseConfig: Configuration): Configuration {
   const config = Object.assign({}, options, baseConfig);
-      
+
   delete config.name;
   delete config.frontendProject;
   delete config.platform;
@@ -162,7 +160,7 @@ function _createConfigFromOptions(options: PackageElectronBuilderOptions, baseCo
 }
 
 function _normalizeBuilderOptions(targets: Map<Platform, Map<Arch, string[]>>, config: Configuration, rawOptions: PackageElectronBuilderOptions): CliOptions {
-  let normalizedOptions: CliOptions = { config, publish: rawOptions.publishPolicy || null };
+  const normalizedOptions: CliOptions = { config, publish: rawOptions.publishPolicy || null };
 
   if (rawOptions.prepackageOnly) {
     normalizedOptions.dir = true;
@@ -176,7 +174,7 @@ function _normalizeBuilderOptions(targets: Map<Platform, Map<Arch, string[]>>, c
 function mergePresetOptions(options: PackageElectronBuilderOptions): PackageElectronBuilderOptions {
   // load preset options file
   const externalOptionsPath: string = options.makerOptionsPath ?
-    resolve(options.root, options.makerOptionsPath) : 
+    resolve(options.root, options.makerOptionsPath) :
     join(options.root, options['sourceRoot'], 'app', 'options', 'maker.options.json');
 
   if (statSync(externalOptionsPath).isFile()) {

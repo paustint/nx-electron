@@ -25,7 +25,7 @@ export function getBaseWebpackPartial(options: BuildBuilderOptions): Configurati
 
   const additionalEntryPoints = options.additionalEntryPoints?.reduce(
     (obj, current) => ({ ...obj, [current.entryName]: current.entryPath }), {} as { [entryName: string]: string }) ?? {};
-  
+
   const webpackConfig: Configuration = {
     entry: {
       main: [options.main],
@@ -77,13 +77,14 @@ export function getBaseWebpackPartial(options: BuildBuilderOptions): Configurati
     },
     plugins: [
       new ForkTsCheckerWebpackPlugin({
-        typescript: { 
-          enabled: true, 
-          configFile: options.tsConfig, 
-          memoryLimit: options.memoryLimit || 2018 
+        typescript: {
+          enabled: true,
+          configFile: options.tsConfig,
+          memoryLimit: options.memoryLimit || 2018
         }
       }),
       new DefinePlugin({
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         __BUILD_VERSION__: JSON.stringify(require(join(options.root, "package.json")).version),
         __BUILD_DATE__: Date.now()
       })
@@ -171,4 +172,8 @@ function getAliases(options: BuildBuilderOptions): { [key: string]: string } {
     }),
     {}
   );
+}
+
+export function getFrontendProjectsAsArray(frontendProject: string | string[]): string[] {
+  return Array.isArray(frontendProject) ? frontendProject : [frontendProject].filter(Boolean);
 }
