@@ -32,16 +32,16 @@ export interface NormalizedSchema extends Schema {
   parsedTags: string[];
 }
 
-function getBuildConfig(project: ProjectConfiguration, options: NormalizedSchema): TargetConfiguration {
+function getBuildConfig(
+  project: ProjectConfiguration,
+  options: NormalizedSchema
+): TargetConfiguration {
   return {
     executor: 'nx-electron:build',
     outputs: ['{options.outputPath}'],
     options: {
       outputPath: joinPathFragments('dist', options.appProjectRoot),
-      main: joinPathFragments(
-        project.sourceRoot,
-        'main.ts'
-      ),
+      main: joinPathFragments(project.sourceRoot, 'main.ts'),
       tsConfig: joinPathFragments(options.appProjectRoot, 'tsconfig.app.json'),
       assets: [joinPathFragments(project.sourceRoot, 'assets')],
     },
@@ -83,8 +83,8 @@ function getPackageConfig(options: NormalizedSchema): TargetConfiguration {
       name: options.name,
       frontendProject: options.frontendProject,
       outputPath: 'dist/packages',
-      prepackageOnly: true
-    }
+      prepackageOnly: true,
+    },
   };
 }
 
@@ -94,8 +94,8 @@ function getMakeConfig(options: NormalizedSchema): TargetConfiguration {
     options: {
       name: options.name,
       frontendProject: options.frontendProject,
-      outputPath: 'dist/executables'
-    }
+      outputPath: 'dist/executables',
+    },
   };
 }
 
@@ -128,11 +128,15 @@ function addProject(tree: Tree, options: NormalizedSchema) {
 }
 
 function updateConstantsFile(tree: Tree, options: NormalizedSchema) {
-  const frontendProject = Array.isArray(options.frontendProject) ? options.frontendProject[0] : options.frontendProject;
+  const frontendProject = Array.isArray(options.frontendProject)
+    ? options.frontendProject[0]
+    : options.frontendProject;
   tree.write(
     join(options.appProjectRoot, 'src/app/constants.ts'),
     stripIndents`export const rendererAppPort = 4200;
-    export const rendererAppName = '${frontendProject || options.name.split('-')[0] + '-web'}';
+    export const rendererAppName = '${
+      frontendProject || options.name.split('-')[0] + '-web'
+    }';
     export const electronAppName = '${options.name}';
     export const updateServerUrl = 'https://deployment-server-url.com';         // TODO: insert your update server url here
     `
@@ -149,47 +153,49 @@ function addAppFiles(tree: Tree, options: NormalizedSchema) {
 }
 
 function addProxy(tree: Tree, options: NormalizedSchema) {
-  getFrontendProjectsAsArray(options.frontendProject).forEach(frontendProject => {
-    const projectConfig = readProjectConfiguration(tree, frontendProject);
-    if (projectConfig.targets && projectConfig.targets.serve) {
-      const pathToProxyFile = `${projectConfig.root}/proxy.conf.json`;
-      projectConfig.targets.serve.options = {
-        ...projectConfig.targets.serve.options,
-        proxyConfig: pathToProxyFile,
-      };
-
-      if (!tree.exists(pathToProxyFile)) {
-        tree.write(
-          pathToProxyFile,
-          JSON.stringify(
-            {
-              '/api': {
-                target: `http://localhost:${options.proxyPort || 3000}`,
-                secure: false,
-              },
-            },
-            null,
-            2
-          )
-        );
-      } else {
-        //add new entry to existing config
-        const proxyFileContent = tree.read(pathToProxyFile).toString();
-
-        const proxyModified = {
-          ...JSON.parse(proxyFileContent),
-          [`/${options.name}-api`]: {
-            target: `http://localhost:${options.proxyPort || 3000}`,
-            secure: false,
-          },
+  getFrontendProjectsAsArray(options.frontendProject).forEach(
+    (frontendProject) => {
+      const projectConfig = readProjectConfiguration(tree, frontendProject);
+      if (projectConfig.targets && projectConfig.targets.serve) {
+        const pathToProxyFile = `${projectConfig.root}/proxy.conf.json`;
+        projectConfig.targets.serve.options = {
+          ...projectConfig.targets.serve.options,
+          proxyConfig: pathToProxyFile,
         };
 
-        tree.write(pathToProxyFile, JSON.stringify(proxyModified, null, 2));
-      }
+        if (!tree.exists(pathToProxyFile)) {
+          tree.write(
+            pathToProxyFile,
+            JSON.stringify(
+              {
+                '/api': {
+                  target: `http://localhost:${options.proxyPort || 3000}`,
+                  secure: false,
+                },
+              },
+              null,
+              2
+            )
+          );
+        } else {
+          //add new entry to existing config
+          const proxyFileContent = tree.read(pathToProxyFile).toString();
 
-      updateProjectConfiguration(tree, frontendProject, projectConfig);
+          const proxyModified = {
+            ...JSON.parse(proxyFileContent),
+            [`/${options.name}-api`]: {
+              target: `http://localhost:${options.proxyPort || 3000}`,
+              secure: false,
+            },
+          };
+
+          tree.write(pathToProxyFile, JSON.stringify(proxyModified, null, 2));
+        }
+
+        updateProjectConfiguration(tree, frontendProject, projectConfig);
+      }
     }
-  })
+  );
 }
 
 export async function addLintingToApplication(
@@ -202,9 +208,7 @@ export async function addLintingToApplication(
     tsConfigPaths: [
       joinPathFragments(options.appProjectRoot, 'tsconfig.app.json'),
     ],
-    eslintFilePatterns: [
-      `${options.appProjectRoot}/**/*.ts`,
-    ],
+    eslintFilePatterns: [`${options.appProjectRoot}/**/*.ts`],
     skipFormat: true,
     setParserOptionsProject: options.setParserOptionsProject,
   });
@@ -274,10 +278,12 @@ function normalizeOptions(host: Tree, options: Schema): NormalizedSchema {
     : [];
 
   let frontendProject: string | string[];
-  if(options.frontendProject) {
+  if (options.frontendProject) {
     frontendProject = Array.isArray(options.frontendProject)
-      ? options.frontendProject.map(frontendProject => names(frontendProject).fileName)
-      : names(options.frontendProject).fileName
+      ? options.frontendProject.map(
+          (frontendProject) => names(frontendProject).fileName
+        )
+      : names(options.frontendProject).fileName;
   }
 
   return {

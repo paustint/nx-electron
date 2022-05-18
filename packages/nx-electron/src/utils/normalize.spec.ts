@@ -2,6 +2,12 @@ import { normalizeBuildOptions } from './normalize';
 import { BuildElectronBuilderOptions } from '../executors/build/executor';
 import * as fs from 'fs';
 
+jest.mock('fs', () => ({
+  __esModule: true,
+  // @ts-ignore
+  ...jest.requireActual('fs'),
+}));
+
 describe('normalizeBuildOptions', () => {
   let options: BuildElectronBuilderOptions;
   let root: string;
@@ -87,7 +93,9 @@ describe('normalizeBuildOptions', () => {
       sourceRoot,
       projectRoot
     );
-    expect(result.tsConfig).toEqual('/root/apps/electron-app/tsconfig.app.json');
+    expect(result.tsConfig).toEqual(
+      '/root/apps/electron-app/tsconfig.app.json'
+    );
   });
 
   it('should normalize asset patterns', () => {
